@@ -54,9 +54,11 @@ class SerialMessage{
          * @brief Prints the args array to the serial monitor
          */
         void printArgs();
+
+        void parseData();
+
     private:
         void readSerial();
-        void parseData();
 
         bool new_data = false;
         bool data_recieved = false;
