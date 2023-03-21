@@ -40,10 +40,16 @@ float Motor::update(){
 }
 
 void Motor::begin(){  
+    Serial.print("Initializing Motor: ");
+    Serial.print(pwmPin);
+    Serial.print(" ");
+    Serial.println(pwmChannel);
     ledcAttachPin(pwmPin, pwmChannel);
     ledcSetup(pwmChannel, 24000, 8);
+    Serial.println("PWM init done.");
     pinMode(forwardPin, OUTPUT);
     pinMode(backwardPin, OUTPUT);
+    ledcWrite(pwmChannel, 0);
     digitalWrite(forwardPin, LOW);
     digitalWrite(backwardPin, LOW);
     Serial.print("Motor::begin() pwmChannel: ");

@@ -58,6 +58,9 @@ float DiffDrive::wrap_angle(float angle) {
 }
 
 void DiffDrive::update() {
+    /**
+     * This section calculates the time since the last update
+    */
     unsigned long now = millis();
     long time_diff = now - lastTime;
     if(time_diff < 1) return;
@@ -89,16 +92,16 @@ void DiffDrive::update() {
     float alpha = wrap_angle(atan2(delta_y, delta_x) - current_theta);
     float beta = -current_theta - alpha;
 
-    if(isReversed && rho < 50){
-        isReversed = false;
-    }
+    // if(isReversed && rho < 50){
+    //     isReversed = false;
+    // }
 
-    // if alpha is in the left half plane, make rho negative
-    if(alpha > PI/2 || alpha < -PI/2){
-        isReversed = true;
-    }
+    // // if alpha is in the left half plane, make rho negative
+    // if(alpha > PI/2 || alpha < -PI/2){
+    //     isReversed = true;
+    // }
 
-    if(isReversed) rho = -rho;
+    // if(isReversed) rho = -rho;
 
     // float v = d_pos / dt; // v stands for velocity
     // float w = d_theta / dt; // w stands for omega (angular velocity)
@@ -110,26 +113,29 @@ void DiffDrive::update() {
     // calculate the new target velocity and angle for the motors to be drive at
     float v_r = k_rho * (rho);
     float w_r = k_alpha * (alpha) + k_beta * (beta);
-    lastVel = v_r;
 
-    float phi_right = 30*(v_r + w_r)/wheelSeparation;
-    float phi_left = 30*(v_r - w_r)/wheelSeparation;
-    // calculate the new velocities for the motors using the a matrix
-    if(isReversed){
-        phi_right = 30*(v_r - w_r)/wheelSeparation;
-        phi_left = 30*(v_r + w_r)/wheelSeparation;
-    }
+    float phi_right = (127 + current_theta)/30;
+    float phi_left = (127 - current_theta)/30;
 
-    float max_vel = 160;
-    if(abs(phi_left) > max_vel){
-        float percent = abs(max_vel / phi_left);
-        phi_left *= percent;
-        phi_right *= percent;
+    float left_motor_speed = (0.25*120*phi_left)*255/7.4;
+    float right_motor_speed = (0.25*120*phi_right)*255/7.4;
+
+    // // calculate the new velocities for the motors using the a matrix
+    // if(isReversed){
+    //     phi_right = 30*(v_r - w_r)/wheelSeparation;
+    //     phi_left = 30*(v_r + w_r)/wheelSeparation;
+    // }
+
+    float max_vel = 180;
+    if(abs(left_motor_speed) > max_vel){
+        float percent = abs(max_vel / left_motor_speed);
+        left_motor_speed *= percent;
+        right_motor_speed *= percent;
     }
-    if(abs(phi_right) > max_vel){
-        float percent = abs(max_vel / phi_right);
-        phi_left *= percent;
-        phi_right *= percent;
+    if(abs(right_motor_speed) > max_vel){
+        float percent = abs(max_vel / right_motor_speed);
+        left_motor_speed *= percent;
+        right_motor_speed *= percent;
     }
 
     // Print the current pose of the robot
@@ -152,19 +158,25 @@ void DiffDrive::update() {
         Serial.print(" beta: ");
         Serial.println(beta,4);
 
-        if(phi_left != 0 || phi_right != 0){
+        if(left_motor_speed != 0 || right_motor_speed != 0){
             Serial.print("left_speed: ");
-            Serial.print(phi_left,0);
+            Serial.print(left_motor_speed,0);
             Serial.print(" right_speed: ");
-            Serial.println(phi_right,0);
+            Serial.println(right_motor_speed,0);
         }
+    }
+
+    if(rho < 10){
+        leftMotor->setVelocity(0);
+        rightMotor->setVelocity(0);
+        return;
     }
     
     // leftMotor->setVelocity(50*(4+current_theta));
     // rightMotor->setVelocity(50*(4-current_theta));
 
-    leftMotor->setVelocity(phi_left);
-    rightMotor->setVelocity(phi_right);
+    leftMotor->setVelocity(160 + 60*current_theta);
+    rightMotor->setVelocity(160 - 60*current_theta);
 
 }
 

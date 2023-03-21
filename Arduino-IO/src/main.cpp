@@ -29,19 +29,23 @@ void rightEncoderInc(){
   }
 }
 
-Motor leftMotor(LEFT_MOTOR_FORWARD_PIN, LEFT_MOTOR_BACK_PIN, LEFT_MOTOR_PWM_PIN, 0,  &leftEncoderCount);
+Motor leftMotor(LEFT_MOTOR_FORWARD_PIN, LEFT_MOTOR_BACK_PIN, LEFT_MOTOR_PWM_PIN, 2,  &leftEncoderCount);
 Motor rightMotor(RIGHT_MOTOR_FORWARD_PIN, RIGHT_MOTOR_BACK_PIN, RIGHT_MOTOR_PWM_PIN, 1, &rightEncoderCount);
 DiffDrive wheels(&leftMotor, &rightMotor, 165); //TODO: Change this to the actual wheel separation
 
 // Object to handle serial communication
 SerialMessage ser;
+unsigned long timer = 0;
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting up...");
 
   wheels.begin();
-  wheels.setPID(3, 14, -3);
+  ledcDetachPin(LEFT_MOTOR_PWM_PIN);
+  ledcAttachPin(LEFT_MOTOR_PWM_PIN, 2);
+  ledcSetup(2, 24000, 8);
+  wheels.setPID(0.00185, 0.01, -0.003);
   // // attach the interrupts
   attachInterrupt(digitalPinToInterrupt(LEFT_ENC_A_PIN), leftEncoderInc, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RIGHT_ENC_A_PIN), rightEncoderInc, CHANGE);
@@ -52,6 +56,10 @@ void setup() {
   
   // sonar.enableScanMode(false);
   Serial.println("Started");
+  leftMotor.setVelocity(160);
+  rightMotor.setVelocity(160);
+  delay(200);
+  timer = millis();
 }
 
 // TODO: Finish writing this function
@@ -117,9 +125,9 @@ void doSerialCommand(int * args, int args_length) {
   }
 }
 
-unsigned long timer = 0;
-
+float velocity = -200;
 void loop() {
+
   ser.update();
   if (ser.isNewData()) {
     int * args = ser.getArgs();
@@ -130,14 +138,14 @@ void loop() {
     doSerialCommand(args, args_length);
     ser.clearNewData();
   }
-  wheels.update();
-  // if (millis() - timer < 5000) {
-  //   wheels.update();
-  // }
-  // else{
-  //   leftMotor.setVelocity(0);
-  //   rightMotor.setVelocity(0);
-  // }
+  // wheels.update();
+  if (millis() - timer < 5000) {
+    wheels.update();
+  }
+  else{
+    leftMotor.setVelocity(0);
+    rightMotor.setVelocity(0);
+  }
   
 
 
